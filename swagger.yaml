@@ -1,0 +1,573 @@
+openapi: 3.0.3
+info:
+  title: Blog API
+  version: 1.0.0
+  description: A RESTful API for a blog platform
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+paths:
+  /posts:
+    get:
+      summary: Get paginated posts
+      tags: [Post]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: category
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+                  pagination:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      limit: { type: integer }
+                      total: { type: integer }
+                      totalPages: { type: integer }
+        '400':
+          description: Bad request
+    post:
+      summary: Create a new post
+      tags: [Post]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                content: { type: string }
+                categoryIds: { type: array, items: { type: string, format: uuid } }
+              required: [title, content]
+      responses:
+        '201':
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          description: Bad request
+  /posts/{id}:
+    get:
+      summary: Get post by ID
+      tags: [Post]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Post found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '404':
+          description: Post not found
+    put:
+      summary: Update post
+      tags: [Post]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                content: { type: string }
+                categoryIds: { type: array, items: { type: string, format: uuid } }
+              required: [title, content]
+      responses:
+        '200':
+          description: Post updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          description: Bad request
+    delete:
+      summary: Delete post
+      tags: [Post]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Post deleted
+        '400':
+          description: Bad request
+  /users/register:
+    post:
+      summary: Register a new user
+      tags: [User]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                name: { type: string }
+                avatarUrl: { type: string, format: uri, nullable: true }
+              required: [email, password, name]
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Bad request
+  /users/login:
+    post:
+      summary: Login a user
+      tags: [User]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+              required: [email, password]
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Invalid credentials
+  /users/refresh-token:
+    post:
+      summary: Refresh access token
+      tags: [User]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken: { type: string }
+              required: [refreshToken]
+      responses:
+        '200':
+          description: New tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Invalid or expired refresh token
+  /users/logout:
+    post:
+      summary: Logout a user
+      tags: [User]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logged out successfully
+        '400':
+          description: Bad request
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      tags: [User]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+    put:
+      summary: Update user
+      tags: [User]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                name: { type: string }
+                avatarUrl: { type: string, format: uri, nullable: true }
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request
+    delete:
+      summary: Delete user
+      tags: [User]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User deleted
+        '400':
+          description: Bad request
+  /posts/{postId}/comments:
+    get:
+      summary: Get comments for a post
+      tags: [Comment]
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+        '400':
+          description: Bad request
+    post:
+      summary: Create a new comment
+      tags: [Comment]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content: { type: string }
+              required: [content]
+      responses:
+        '201':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          description: Bad request
+  /comments/{id}:
+    put:
+      summary: Update comment
+      tags: [Comment]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content: { type: string }
+              required: [content]
+      responses:
+        '200':
+          description: Comment updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          description: Bad request
+    delete:
+      summary: Delete comment
+      tags: [Comment]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Comment deleted
+        '400':
+          description: Bad request
+  /categories:
+    get:
+      summary: Get all categories
+      tags: [Category]
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+        '400':
+          description: Bad request
+    post:
+      summary: Create a new category
+      tags: [Category]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                slug: { type: string, pattern: '^[a-z0-9-]+$' }
+              required: [name, slug]
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          description: Bad request
+  /categories/{id}:
+    get:
+      summary: Get category by ID
+      tags: [Category]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Category found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          description: Category not found
+    put:
+      summary: Update category
+      tags: [Category]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                slug: { type: string, pattern: '^[a-z0-9-]+$' }
+              required: [name, slug]
+      responses:
+        '200':
+          description: Category updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          description: Bad request
+    delete:
+      summary: Delete category
+      tags: [Category]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Category deleted
+        '400':
+          description: Bad request
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        name: { type: string }
+        avatarUrl: { type: string, format: uri, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    UserResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        accessToken: { type: string }
+        refreshToken: { type: string }
+    Post:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        content: { type: string }
+        authorId: { type: string, format: uuid }
+        author:
+          type: object
+          properties:
+            name: { type: string }
+            avatarUrl: { type: string, format: uri, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    Comment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        content: { type: string }
+        postId: { type: string, format: uuid }
+        authorId: { type: string, format: uuid }
+        author:
+          type: object
+          properties:
+            name: { type: string }
+            avatarUrl: { type: string, format: uri, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Category:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        slug: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
